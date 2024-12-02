@@ -1,0 +1,23 @@
+﻿_id,Year,Percent,95% CI Lower Limit,95% CI Upper Limit,Measure
+1,2012,14.5,13.8,15.2,Lifetime Asthma Prevalence
+2,2013,15.1,14.2,15.9,Lifetime Asthma Prevalence
+3,2014,13.4,12.2,14.5,Lifetime Asthma Prevalence
+4,2015,13.2,12.3,14.2,Lifetime Asthma Prevalence
+5,2016,13.6,12.4,14.8,Lifetime Asthma Prevalence
+6,2017,16,14.3,17.7,Lifetime Asthma Prevalence
+7,2018,17.6,15.1,20.2,Lifetime Asthma Prevalence
+8,2019,17.1,14.4,19.7,Lifetime Asthma Prevalence
+9,2020,18.5,14.6,22.3,Lifetime Asthma Prevalence
+10,2021,14.7,13.6,15.8,Lifetime Asthma Prevalence
+11,2022,14.9,13.9,15.9,Lifetime Asthma Prevalence
+12,2012,9,8.4,9.5,Current Asthma Prevalence
+13,2013,9,8.4,9.7,Current Asthma Prevalence
+14,2014,7.8,6.9,8.7,Current Asthma Prevalence
+15,2015,8,7.2,8.7,Current Asthma Prevalence
+16,2016,8,7.1,9,Current Asthma Prevalence
+17,2017,8.8,7.6,10.1,Current Asthma Prevalence
+18,2018,9.7,7.8,11.6,Current Asthma Prevalence
+19,2019,10.6,8.1,13.1,Current Asthma Prevalence
+20,2020,9.9,7.6,12.2,Current Asthma Prevalence
+21,2021,8.8,7.9,9.7,Current Asthma Prevalence
+22,2022,8.7,7.9,9.4,Current Asthma Prevalence
