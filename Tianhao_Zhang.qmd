@@ -307,3 +307,408 @@ plt.show()
 
 ```
 
+##### yuki
+# Fire-Incidence -Top10 countries
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+# Load the dataset
+file_path = 'California_Fire_Incidents.csv'  
+fire_data = pd.read_csv(file_path)
+fire_data
+
+# Convert the 'Started' column to datetime format and extract the hour and month
+fire_data['Started'] = pd.to_datetime(fire_data['Started'])
+fire_data['StartHour'] = fire_data['Started'].dt.hour
+fire_data['StartMonth'] = fire_data['Started'].dt.month
+
+# Count the occurrences of fires in each county to find the locations most frequently under fire threat
+fire_counts_by_county = fire_data['Counties'].value_counts()
+
+# Analyze the distribution of fire occurrences by hour of the day and month of the year
+hourly_distribution = fire_data['StartHour'].value_counts().sort_index()
+monthly_distribution = fire_data['StartMonth'].value_counts().sort_index()
+
+# Group data by 'ArchiveYear' to analyze annual frequency and devastation metrics
+annual_data = fire_data.groupby('ArchiveYear').agg({
+    'AcresBurned': 'sum',
+    'StructuresDestroyed': 'sum',
+    'Fatalities': 'sum',
+    'UniqueId': 'count'
+}).rename(columns={'UniqueId': 'FireCount'})#
+
+# Bar Graph of Fire Counts by County
+plt.figure(figsize=(14, 8))
+fire_counts_by_county.head(10).plot(kind='bar', color='orange')
+plt.title('Top 10 Counties by Fire Count')
+plt.xlabel('County')
+plt.ylabel('Number of Fires')
+plt.xticks(rotation=45)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
+
+```
+
+# Fire-Incidence -Top10 countries
+```{python}
+# Line Graph of Fire Occurrences by Hour
+plt.figure(figsize=(14, 8))
+hourly_distribution.plot(kind='line', marker='o', color='red')
+plt.title('Fire Occurrences by Hour of the Day')
+plt.xlabel('Hour')
+plt.ylabel('Number of Fires')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
+
+# Line Graph of Fire Occurrences by Month
+plt.figure(figsize=(14, 8))
+monthly_distribution.plot(kind='line', marker='o', color='green')
+plt.title('Fire Occurrences by Month')
+plt.xlabel('Month')
+plt.ylabel('Number of Fires')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
+
+# Time Series of Annual Wildfire Devastation
+fig, ax = plt.subplots(3, 1, figsize=(14, 18))
+annual_data['AcresBurned'].plot(ax=ax[0], kind='line', marker='o', color='blue')
+ax[0].set_title('Annual Acres Burned')
+ax[0].set_xlabel('Year')
+ax[0].set_ylabel('Acres')
+ax[0].grid(True, linestyle='--', alpha=0.6)
+
+annual_data['StructuresDestroyed'].plot(ax=ax[1], kind='line', marker='o', color='purple')
+ax[1].set_title('Annual Structures Destroyed')
+ax[1].set_xlabel('Year')
+ax[1].set_ylabel('Structures')
+ax[1].grid(True, linestyle='--', alpha=0.6)
+
+annual_data['Fatalities'].plot(ax=ax[2], kind='line', marker='o', color='black')
+ax[2].set_title('Annual Fatalities')
+ax[2].set_xlabel('Year')
+ax[2].set_ylabel('Fatalities')
+ax[2].grid(True, linestyle='--', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+```
+
+
+# Madi-Cal Enrollment Trend
+```{python}
+# Load datasets
+path1 = 'care_enrollment.csv'
+path2 = 'enrollment_data.csv'
+
+managed_care = pd.read_csv(path1)
+enrollment = pd.read_csv(path2)
+
+# Convert 'Enrollment Month' in managed_care to datetime
+managed_care['Enrollment Month'] = pd.to_datetime(managed_care['Enrollment Month'])
+
+# Convert 'Count of Enrollees' to numeric (remove commas and handle as numeric)
+managed_care['Count of Enrollees'] = pd.to_numeric(
+    managed_care['Count of Enrollees'].str.replace(',', ''), errors='coerce'
+)
+
+# Convert 'Eligibility Date' in enrollment to datetime
+enrollment['Eligibility Date'] = pd.to_datetime(enrollment['Eligibility Date'])
+
+# Replace 'NULL' with 0 in '# Enrolled' and convert to numeric
+enrollment['# Enrolled'] = pd.to_numeric(enrollment['# Enrolled'].fillna(0))
+
+# Group and sum enrollment counts by month
+enrollment_trends_managed = managed_care.groupby(managed_care['Enrollment Month'].dt.to_period('M'))['Count of Enrollees'].sum()
+enrollment_trends_general = enrollment.groupby(enrollment['Eligibility Date'].dt.to_period('M'))['# Enrolled'].sum()
+enrollment_trends_managed.to_csv('enrollment_trends_managed.csv')
+# Convert period indices to datetime for plotting
+enrollment_trends_managed.index = enrollment_trends_managed.index.to_timestamp()
+enrollment_trends_general.index = enrollment_trends_general.index.to_timestamp()
+
+# Plot the data
+plt.figure(figsize=(14, 7))
+plt.plot(enrollment_trends_managed.index, enrollment_trends_managed.values, label='Managed Care Enrollees', marker='o')
+plt.plot(enrollment_trends_general.index, enrollment_trends_general.values, label='General Enrollees', marker='x')
+plt.title('Medi-Cal Enrollment Trends Over Time')
+plt.xlabel('Date')
+plt.ylabel('Total Enrollees')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
+
+# Madi-Cal Enrollment by Reigon
+```{python}
+# Calculate the total enrollment by region
+region_data = enrollment.groupby('Region')['# Enrolled'].sum()
+
+plt.figure(figsize=(10, 5))
+region_data.plot(kind='bar', color='teal')
+plt.title('Medi-Cal Enrollment by Region')
+plt.xlabel('Region')
+plt.ylabel('Number of Enrollees')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+```
+
+# Medi-Cal Enrollment by plan type and county
+```{python}
+# Group data by County and Plan Type, and sum the counts
+plan_type_data = managed_care.groupby(['County', 'Plan Type'])['Count of Enrollees'].sum().unstack().fillna(0)
+
+# Adjust figure size
+plt.figure(figsize=(14, 8))  # Adjust width and height for better proportions
+
+# Plot the stacked bar chart
+plan_type_data.plot(kind='bar', stacked=True, colormap='coolwarm', figsize=(14, 8), width=0.8)
+
+# Add title and axis labels
+plt.title('Medi-Cal Enrollment by Plan Type and County', fontsize=14)
+plt.xlabel('County', fontsize=12)
+plt.ylabel('Number of Enrollees', fontsize=12)
+
+# Adjust x-axis labels to show every nth label
+xticks = range(0, len(plan_type_data.index), 2)  # Show every second label
+plt.xticks(xticks, plan_type_data.index[xticks], rotation=45, fontsize=10)  # Rotate and reduce font size
+
+# Optimize legend placement
+plt.legend(title='Plan Type', loc='upper left', bbox_to_anchor=(1.05, 1), fontsize=10)
+
+# Add gridlines for better visual guidance
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Automatically adjust layout to fit elements
+plt.tight_layout()
+plt.show()
+
+```
+
+# Regression
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+wildfire_2019_2022 = pd.read_csv('wildfire_2019_2022.csv')
+wildfire_2019_2022
+
+
+# select the first 10 characters of incident_date_created column 
+wildfire_2019_2022['incident_date_created'] = wildfire_2019_2022['incident_date_created'].str[:10]
+wildfire_2019_2022
+# add year column and month column using the first 4 characters and the 6th and 7th characters of incident_date_created column
+wildfire_2019_2022['year'] = wildfire_2019_2022['incident_date_created'].str[:4]
+wildfire_2019_2022['month'] = wildfire_2019_2022['incident_date_created'].str[5:7]
+wildfire_2019_2022
+
+# create a new dataframe with year, month, and incident counts
+wildfire_2019_2022_monthly = wildfire_2019_2022.groupby(['year', 'month']).size().reset_index(name='incident_count')
+wildfire_2019_2022_monthly
+
+# select year 2019 to 2022
+wildfire_2019_2022_monthly = wildfire_2019_2022_monthly[(wildfire_2019_2022_monthly['year'] >= '2019') & (wildfire_2019_2022_monthly['year'] <= '2022')]
+wildfire_2019_2022_monthly
+
+# to csv
+wildfire_2019_2022_monthly.to_csv('wildfire_2019_2022_monthly.csv', index=False)
+
+# read airquality_2019, airquality_2020, airquality_2021, airquality_2022 csv files
+airquality_2019 = pd.read_csv('airquality_2019.csv')
+airquality_2020 = pd.read_csv('airquality_2020.csv')
+airquality_2021 = pd.read_csv('airquality_2021.csv')
+airquality_2022 = pd.read_csv('airquality_2022.csv')
+airquality_2019
+
+# read monthly_pm25_2019, monthly_pm25_2020, monthly_pm25_2021, monthly_pm25_2022 csv files
+monthly_pm25_2019 = pd.read_csv('monthly_pm25_2019.csv')
+monthly_pm25_2020 = pd.read_csv('monthly_pm25_2020.csv')
+monthly_pm25_2021 = pd.read_csv('monthly_pm25_2021.csv')
+monthly_pm25_2022 = pd.read_csv('monthly_pm25_2022.csv')
+monthly_pm25_2019
+# add year column with value 2019
+monthly_pm25_2019['year'] = '2019'
+# rename the column Value to pm25
+monthly_pm25_2019 = monthly_pm25_2019.rename(columns={'Value':'pm25'})
+monthly_pm25_2019
+
+```
+
+```{python}
+monthly_pm25_2020
+monthly_pm25_2020['year'] = '2020'
+monthly_pm25_2020 = monthly_pm25_2020.rename(columns={'PM2.5':'pm25'})
+
+monthly_pm25_2021
+monthly_pm25_2021['year'] = '2021'
+monthly_pm25_2021.rename(columns={'MeasuredValue':'pm25'}, inplace=True)
+
+monthly_pm25_2022
+monthly_pm25_2022['year'] = '2022'
+monthly_pm25_2022.rename(columns={'MeasuredValue':'pm25'}, inplace=True)
+
+# merge the above 4 dataframes
+monthly_pm25 = pd.concat([monthly_pm25_2019, monthly_pm25_2020, monthly_pm25_2021, monthly_pm25_2022])
+monthly_pm25
+
+# rename Month to month
+monthly_pm25 = monthly_pm25.rename(columns={'Month':'month'})
+monthly_pm25.to_csv('monthly_pm25.csv', index=False)
+
+# read care_enrollment
+care_enrollment = pd.read_csv('care_enrollment.csv')
+care_enrollment
+
+# read enrollment_trends_managed
+enrollment_trends_managed = pd.read_csv('enrollment_trends_managed.csv')
+enrollment_trends_managed
+
+
+# add year and month
+enrollment_trends_managed['year'] = enrollment_trends_managed['Enrollment Month'].str[:4]
+enrollment_trends_managed['month'] = enrollment_trends_managed['Enrollment Month'].str[5:7]
+enrollment_trends_managed
+
+# select year 2019 to 2022
+enrollment_trends_managed = enrollment_trends_managed[(enrollment_trends_managed['year'] >= '2019') & (enrollment_trends_managed['year'] <= '2022')]
+enrollment_trends_managed
+
+enrollment_trends_managed.to_csv('enrollment_trends_managed.csv', index=False)
+
+# merge all the data using year and month
+wildfire_2019_2022_monthly = pd.read_csv('wildfire_2019_2022_monthly.csv')
+monthly_pm25 = pd.read_csv('monthly_pm25.csv')
+enrollment_trends_managed = pd.read_csv('enrollment_trends_managed.csv')
+wildfire_2019_2022_monthly
+
+monthly_pm25
+enrollment_trends_managed
+
+# merge them together using year and month
+merged = pd.merge(wildfire_2019_2022_monthly, monthly_pm25, on=['year', 'month'], how='left')
+merged = pd.merge(merged, enrollment_trends_managed, on=['year', 'month'], how='left')
+merged
+
+# rename Count of Enrollees to enrollment
+merged.rename(columns={'Count of Enrollees':'enrollment'}, inplace=True)
+merged
+# add the lnenrollment column
+merged['lnenrollment'] = np.log(merged['enrollment'])
+merged
+
+```
+
+# show regression relations
+```{python}
+# run regression analysis of wildfire to pm25, and pm25 to enrollment
+
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+
+# wildfire to pm25
+model = ols('pm25 ~ incident_count', data=merged).fit()
+print(model.summary())
+
+# run regression analysis of wildfire to pm25, and pm25 to enrollment
+
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+
+# enrollment to pm25
+model = ols('enrollment ~ pm25', data=merged).fit()
+print(model.summary())
+
+
+# enrollment to incidence count
+model = ols('lnenrollment ~ incident_count', data=merged).fit()
+print(model.summary())
+
+
+```
+
+
+# Economic Impact Map
+```{python}
+import pandas as pd
+
+# Reload the new postfire file to analyze its structure
+file_path_new = 'postfire.csv'
+data = pd.read_csv(file_path_new)
+data
+
+# filter column Hazard Type with value 'Fire'
+data = data[data['Hazard Type'] == 'Fire']
+data
+
+# Clean and preprocess the dataset for plotting
+# Focusing on relevant columns: fire size (if available), economic impact, and geographic information
+
+# Rename columns for easier access
+data.rename(columns={
+    '* Damage': 'Damage',
+    '* CAL FIRE Unit': 'FireUnit',
+    'Assessed Improved Value (parcel)': 'EconomicImpact',
+    'Latitude': 'Lat',
+    'Longitude': 'Lon',
+    'State': 'State',
+    'County': 'County'
+}, inplace=True)
+
+# Drop rows with missing essential data
+cleaned_data = data
+
+# Check for fire size (if not available, proceed without)
+if 'FireUnit' in cleaned_data.columns:
+    fire_size_available = True
+else:
+    fire_size_available = False
+
+# Summary statistics of key columns
+summary_stats = cleaned_data[['EconomicImpact', 'Lat', 'Lon']].describe()
+
+# Display the summary of key statistics
+summary_stats
+
+# Data Clearning
+geo_data = cleaned_data.groupby('County', as_index=False).agg({
+    'EconomicImpact': 'sum',
+    'Lat': 'mean',
+    'Lon': 'mean'
+
+})
+geo_data
+
+#Plot
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Download
+usa_counties = gpd.read_file("https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_county_20m.zip")
+
+# filter 
+california_map = usa_counties[usa_counties['STATEFP'] == '06']  # STATEFP 为加州的代码
+
+# map
+fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+california_map.boundary.plot(ax=ax, linewidth=1)
+plt.title("California County Map")
+plt.show()
+
+geo_data['County'] = geo_data['County'].str.lower()
+california_map['NAME'] = california_map['NAME'].str.lower()
+
+map_data = california_map.merge(geo_data, left_on='NAME', right_on='County', how='left')
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+california_map.boundary.plot(ax=ax, linewidth=1)
+map_data.plot(column='EconomicImpact', ax=ax, legend=True,
+              legend_kwds={'label': "Total Economic Impact (USD)"},
+              cmap='OrRd',vmin=0, vmax=2e9)
+plt.title('Economic Impact Across California Counties')
+plt.show()
+
+
+```
