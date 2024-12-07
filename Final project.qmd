@@ -30,8 +30,70 @@ Method: Quantify wildfire impacts on community economics, by evaluating the effe
 2. Code and Graphs
 # Wildfire Incidence Map: Review of increasing frequency and severity of wildfires in California by county
 ```{python}
-```
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
 
+# Load wildfire dataset
+file_path = 'California_Fire_Incidents.csv'  # Replace with your actual file path
+df = pd.read_csv(file_path)
+
+# Clean column names
+df.columns = df.columns.str.strip().str.replace(r'\* ', '', regex=True)
+
+# Aggregate wildfire cases by county
+wildfire_counts = df['Counties'].value_counts().reset_index()
+wildfire_counts.columns = ['County', 'Cases']
+
+# Load California county shapefile
+shapefile_path = 'CA_Counties.shp'  # Replace with your actual shapefile path
+california_map = gpd.read_file(shapefile_path)
+
+# Ensure county names match between datasets
+california_map['County'] = california_map['NAME']
+
+# Merge wildfire data with county map
+merged_map = california_map.merge(wildfire_counts, on='County', how='left')
+
+# Plot the map
+fig, ax = plt.subplots(1, 1, figsize=(20, 15))
+merged_map.boundary.plot(ax=ax, linewidth=0.8, color='black')  # Plot county boundaries
+merged_map.plot(
+    column='Cases',
+    cmap='Reds',  # Use a red color gradient for wildfire severity
+    legend=True,
+    legend_kwds={
+        'label': "Number of Wildfire Cases by County",
+        'orientation': "vertical"
+    },
+    ax=ax,
+    missing_kwds={
+        "color": "lightgrey",
+        "label": "No data"
+    }
+)
+
+# Annotate counties with more than 5 cases
+for idx, row in merged_map.iterrows():
+    if pd.notna(row['Cases']) and row['Cases'] > 5:
+        plt.annotate(
+            text=f"{row['County']}\n{int(row['Cases'])} cases",
+            xy=(row.geometry.centroid.x, row.geometry.centroid.y),
+            horizontalalignment='center',
+            fontsize=6,
+            color='black',
+            weight='bold'
+        )
+
+# Add title and annotations
+ax.set_title('Wildfire Cases in California by County', fontsize=22)
+ax.axis('off')
+
+plt.annotate("Counties without data shown in grey", xy=(0.1, 0.02), xycoords='figure fraction', fontsize=12)
+
+# Show the map
+plt.show()
+```
 
 # Fire-Incidence -Top10 countries
 ```{python}
