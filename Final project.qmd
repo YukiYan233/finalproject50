@@ -18,95 +18,78 @@ include-before-body:
     }
 ---
 1. Introduction
-Background: Overview of California’s wildfire challenges and their economic repercussions.
-Problem Statement: The intersection of wildfire policies and their economic impacts on property damage, insurance costs, and recovery expenses.
-Objectives:
-Quantify wildfire impacts on community economics.
-Evaluate the effectiveness of wildfire-related policies using reproducible coding methodologies.
+Background: California experienced a significant number of wildfires due to climate conditions and human activities. The wildfire smoke  significantly deteriorates air quality and increases respiratory health issues. 
+
+Problem Statement: Our study explores how these impacts lead to rising healthcare needs and the role of health insurance in mitigating health risks.
+
+Objectives: We wanted to find a policy that would effectively prevent wildfires from causing significant harm to communities.
+
+Method: Quantify wildfire impacts on community economics, by evaluating the effectiveness of wildfire-related policies using reproducible coding methodologies. Using regression, we measure the causal influence of fire incidence and pm2.5, pm2.5, and enrollment rate, enrollment rate, and fire incidence. Fire incidence, PM2.5, and enrollment rate. Then use  a math equation from a research paper to calculate the economic value. 
 
 
-2. Literature Review 
-# Wildfire Trends: Review of increasing frequency and severity of wildfires in California
+2. Code and Graphs
+# Wildfire Incidence Map: Review of increasing frequency and severity of wildfires in California by county
 ```{python}
-import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-file_path = 'postfire.csv' 
-df = pd.read_csv(file_path)
-
-# wildfire dataset
-file_path = 'postfire.csv'  
-df = pd.read_csv(file_path)
-
-# need to clean "*"
-df.columns = df.columns.str.strip().str.replace(r'\* ', '', regex=True)
-
-# aggregate by county
-wildfire_counts = df['County'].value_counts().reset_index()  # Get case counts
-wildfire_counts.columns = ['County', 'Cases']
-
-# we want to use shapefile to visualize the data in map
-shapefile_path = 'CA_Counties.shp' 
-california_map = gpd.read_file(shapefile_path)
-california_map['County'] = california_map['NAME']
-
-merged_map = california_map.merge(wildfire_counts, on='County', how='left')
-
-fig, ax = plt.subplots(1, 1, figsize=(20, 15))
-merged_map.boundary.plot(ax=ax, linewidth=0.8, color='black') 
-merged_map.plot(
-    column='Cases',
-    cmap='Reds',  # Use a darker colormap for severity
-    legend=True,
-    legend_kwds={
-        'label': "Number of Wildfire Cases by County",
-        'orientation': "vertical"
-    },
-    ax=ax,
-    missing_kwds={
-        "color": "lightgrey",
-        "label": "No data"
-    }
-)
-
-for idx, row in merged_map.iterrows():
-    if pd.notna(row['Cases']) and row['Cases'] > 5:  # Only label counties with more than 5 cases
-        plt.annotate(
-            text=f"{row['County']}\n{int(row['Cases'])} cases",
-            xy=(row.geometry.centroid.x, row.geometry.centroid.y),
-            horizontalalignment='center',
-            fontsize=6,  # Reduced font size
-            color='black',
-            weight='bold'
-        )
-
-# Title and annotations
-ax.set_title('Wildfire Cases in California by County', fontsize=22)  # Enlarged title
-ax.axis('off')
-
-plt.annotate("Counties without data shown in grey", xy=(0.1, 0.02), xycoords='figure fraction', fontsize=12)
-
-plt.show()
-
-output_list = []
-
-for idx, row in merged_map.iterrows():
-    if pd.notna(row['Cases']):
-        output_list.append(f"{row['County']}: {int(row['Cases'])} cases")
-    else:
-        output_list.append(f"{row['County']}: No data")
-
-for item in output_list:
-    print(item)
-
 ```
 
 
-Economic Impacts: Insights from prior research into property damage, insurance, and recovery dynamics.
+# Fire-Incidence -Top10 countries
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+# Load the dataset
+file_path = 'California_Fire_Incidents.csv'  
+fire_data = pd.read_csv(file_path)
+fire_data
 
-# Air quality: Negative impact of wild fire
+# Convert the 'Started' column to datetime format and extract the hour and month
+fire_data['Started'] = pd.to_datetime(fire_data['Started'])
+fire_data['StartHour'] = fire_data['Started'].dt.hour
+fire_data['StartMonth'] = fire_data['Started'].dt.month
+
+# Count the occurrences of fires in each county to find the locations most frequently under fire threat
+fire_counts_by_county = fire_data['Counties'].value_counts()
+
+# Analyze the distribution of fire occurrences by hour of the day and month of the year
+hourly_distribution = fire_data['StartHour'].value_counts().sort_index()
+monthly_distribution = fire_data['StartMonth'].value_counts().sort_index()
+
+# Group data by 'ArchiveYear' to analyze annual frequency and devastation metrics
+annual_data = fire_data.groupby('ArchiveYear').agg({
+    'AcresBurned': 'sum',
+    'StructuresDestroyed': 'sum',
+    'Fatalities': 'sum',
+    'UniqueId': 'count'
+}).rename(columns={'UniqueId': 'FireCount'})#
+
+# Bar Graph of Fire Counts by County
+plt.figure(figsize=(14, 8))
+fire_counts_by_county.head(10).plot(kind='bar', color='orange')
+plt.title('Top 10 Counties by Fire Count')
+plt.xlabel('County')
+plt.ylabel('Number of Fires')
+plt.xticks(rotation=45)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
+
+```
+Health Impacts: PM2.5 and Medi-Cal enrollment 
+# In California, the traditional wildfire season has lengthened, causing peak impacts to occur in earlier months (April-July). California’s recent wildfire seasons have caused extensive environmental, health, and economic damages within and outside of the state. 
+
+```{python}
+# Line Graph of Fire Occurrences by Month
+plt.figure(figsize=(14, 8))
+monthly_distribution.plot(kind='line', marker='o', color='green')
+plt.title('Fire Occurrences by Month')
+plt.xlabel('Month')
+plt.ylabel('Number of Fires')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
+```
+
+
+# Air quality: Negative impact of wildfire
+# Seasonal Fluctuations: PM2.5 levels rise from spring (April), peaking in summer and early fall, likely due to wildfires
 # 2019
 ```{python}
 import pandas as pd
@@ -261,7 +244,9 @@ plt.tight_layout()
 plt.show()
 
 ```
-# Annual Trend of PM2.5
+# Annual Trend of PM2.5 （2017-2020）
+# Yearly Variations: Higher peaks in 2018 and 2020 suggest more severe wildfire events 
+# Wildfire Impact: Wildfires significantly worsen air quality during summer to fall, leading to more respiratory issues
 ```{python}
 annual_pm25=pd.read_csv('annual_pm25.csv')
 plt.figure(figsize=(10, 6))
@@ -274,8 +259,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-
-# Respiratory Prevalence
+# Respiratory Death Prevalence. After Medi-Cal Introduce: We see a sharp decrease after 2020, showing the effectiveness of the policy.
 ```{python}
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -307,94 +291,10 @@ plt.show()
 
 ```
 
-##### yuki
-# Fire-Incidence -Top10 countries
-```{python}
-import pandas as pd
-import matplotlib.pyplot as plt
-# Load the dataset
-file_path = 'California_Fire_Incidents.csv'  
-fire_data = pd.read_csv(file_path)
-fire_data
-
-# Convert the 'Started' column to datetime format and extract the hour and month
-fire_data['Started'] = pd.to_datetime(fire_data['Started'])
-fire_data['StartHour'] = fire_data['Started'].dt.hour
-fire_data['StartMonth'] = fire_data['Started'].dt.month
-
-# Count the occurrences of fires in each county to find the locations most frequently under fire threat
-fire_counts_by_county = fire_data['Counties'].value_counts()
-
-# Analyze the distribution of fire occurrences by hour of the day and month of the year
-hourly_distribution = fire_data['StartHour'].value_counts().sort_index()
-monthly_distribution = fire_data['StartMonth'].value_counts().sort_index()
-
-# Group data by 'ArchiveYear' to analyze annual frequency and devastation metrics
-annual_data = fire_data.groupby('ArchiveYear').agg({
-    'AcresBurned': 'sum',
-    'StructuresDestroyed': 'sum',
-    'Fatalities': 'sum',
-    'UniqueId': 'count'
-}).rename(columns={'UniqueId': 'FireCount'})#
-
-# Bar Graph of Fire Counts by County
-plt.figure(figsize=(14, 8))
-fire_counts_by_county.head(10).plot(kind='bar', color='orange')
-plt.title('Top 10 Counties by Fire Count')
-plt.xlabel('County')
-plt.ylabel('Number of Fires')
-plt.xticks(rotation=45)
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.show()
-
-```
-
-# Fire-Incidence -Top10 countries
-```{python}
-# Line Graph of Fire Occurrences by Hour
-plt.figure(figsize=(14, 8))
-hourly_distribution.plot(kind='line', marker='o', color='red')
-plt.title('Fire Occurrences by Hour of the Day')
-plt.xlabel('Hour')
-plt.ylabel('Number of Fires')
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.show()
-
-# Line Graph of Fire Occurrences by Month
-plt.figure(figsize=(14, 8))
-monthly_distribution.plot(kind='line', marker='o', color='green')
-plt.title('Fire Occurrences by Month')
-plt.xlabel('Month')
-plt.ylabel('Number of Fires')
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.show()
-
-# Time Series of Annual Wildfire Devastation
-fig, ax = plt.subplots(3, 1, figsize=(14, 18))
-annual_data['AcresBurned'].plot(ax=ax[0], kind='line', marker='o', color='blue')
-ax[0].set_title('Annual Acres Burned')
-ax[0].set_xlabel('Year')
-ax[0].set_ylabel('Acres')
-ax[0].grid(True, linestyle='--', alpha=0.6)
-
-annual_data['StructuresDestroyed'].plot(ax=ax[1], kind='line', marker='o', color='purple')
-ax[1].set_title('Annual Structures Destroyed')
-ax[1].set_xlabel('Year')
-ax[1].set_ylabel('Structures')
-ax[1].grid(True, linestyle='--', alpha=0.6)
-
-annual_data['Fatalities'].plot(ax=ax[2], kind='line', marker='o', color='black')
-ax[2].set_title('Annual Fatalities')
-ax[2].set_xlabel('Year')
-ax[2].set_ylabel('Fatalities')
-ax[2].grid(True, linestyle='--', alpha=0.6)
-
-plt.tight_layout()
-plt.show()
-```
-
 
 # Madi-Cal Enrollment Trend
+# Between March 20 and August 20, 2020, approximately 271,820 individuals signed up for health care coverage. In response to the state's wildfires, in 2020, Medi-Cal enrollment increased. 
+
 ```{python}
 # Load datasets
 path1 = 'care_enrollment.csv'
@@ -434,22 +334,6 @@ plt.xlabel('Date')
 plt.ylabel('Total Enrollees')
 plt.legend()
 plt.grid(True)
-plt.show()
-```
-
-
-# Madi-Cal Enrollment by Reigon
-```{python}
-# Calculate the total enrollment by region
-region_data = enrollment.groupby('Region')['# Enrolled'].sum()
-
-plt.figure(figsize=(10, 5))
-region_data.plot(kind='bar', color='teal')
-plt.title('Medi-Cal Enrollment by Region')
-plt.xlabel('Region')
-plt.ylabel('Number of Enrollees')
-plt.xticks(rotation=45)
-plt.tight_layout()
 plt.show()
 ```
 
@@ -607,7 +491,7 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 
 
-# wildfire to pm25
+# wildfire incidence countto pm25
 model = ols('pm25 ~ incident_count', data=merged).fit()
 print(model.summary())
 
@@ -622,13 +506,58 @@ model = ols('enrollment ~ pm25', data=merged).fit()
 print(model.summary())
 
 
-# enrollment to incidence count
+# enrollment to wildfire incidence count
 model = ols('lnenrollment ~ incident_count', data=merged).fit()
 print(model.summary())
 
-
 ```
 
+Economic Impacts: Insights from prior research into property damage, insurance, and recovery dynamics.
+# Last, we apply the EPA’s value of a statistical life (VSL) to these mortality impacts to estimate the total valuation of the health burden. EPA's Value of a Statistical Life (VSL) in 2015 dollars is VSL = $8.7 million. Last, we applied a 3% discount rate over the 11-year period to estimate the net present value. 
+# Equation: Economic valuation = mortality burden multiplied by EPA's VSL
+# Annual Economic Valuation Calculation
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Define the EPA's Value of a Statistical Life (VSL) in 2015 dollars
+VSL = 8.7e6  # $8.7 million
+
+# Load the datasets
+data_2009_2018 = pd.read_csv('2009_2018_death.csv')
+data_2019_2022 = pd.read_csv('2019_2022_death.csv')
+
+# Combine the two datasets into one for analysis
+combined_data = pd.concat([data_2009_2018, data_2019_2022])
+
+# Clean and filter the data
+combined_data['Count'] = pd.to_numeric(combined_data['Count'], errors='coerce')
+combined_data_cleaned = combined_data.dropna(subset=['Count'])
+
+# Group by Year and calculate the annual economic valuation
+annual_economic_valuation = (
+    combined_data_cleaned.groupby('Year')['Count']
+    .sum()  # Sum mortality counts for each year
+    .mul(VSL)  # Multiply by the VSL to get economic valuation
+    .reset_index(name='Economic_Valuation')  # Reset index for a clean DataFrame
+)
+
+# Plot the annual economic valuation and compare the result
+plt.figure(figsize=(10, 6))
+plt.plot(
+    annual_economic_valuation['Year'],
+    annual_economic_valuation['Economic_Valuation'] / 1e12,  # Convert to trillions
+    marker='o',
+    linestyle='-'
+)
+plt.title('Annual Economic Valuation (in Trillions of Dollars)', fontsize=14)
+plt.xlabel('Year', fontsize=12)
+plt.ylabel('Economic Valuation (Trillions)', fontsize=12)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+```
 
 # Economic Impact Map
 ```{python}
@@ -672,7 +601,7 @@ summary_stats = cleaned_data[['EconomicImpact', 'Lat', 'Lon']].describe()
 # Display the summary of key statistics
 summary_stats
 
-# Data Clearning
+# Data Cleaning
 geo_data = cleaned_data.groupby('County', as_index=False).agg({
     'EconomicImpact': 'sum',
     'Lat': 'mean',
@@ -689,7 +618,7 @@ import matplotlib.pyplot as plt
 usa_counties = gpd.read_file("https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_county_20m.zip")
 
 # filter 
-california_map = usa_counties[usa_counties['STATEFP'] == '06']  # STATEFP 为加州的代码
+california_map = usa_counties[usa_counties['STATEFP'] == '06']  
 
 # map
 fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -709,6 +638,81 @@ map_data.plot(column='EconomicImpact', ax=ax, legend=True,
               cmap='OrRd',vmin=0, vmax=2e9)
 plt.title('Economic Impact Across California Counties')
 plt.show()
+```
+# Wildfire Incidence Map. By comparing the results. We know that the high-risk area has the most economic value accessed. Showing that more fire incidence shows more economic value they can have (like health value, property damage reconstruction). These findings extend evidence on climate-related health impacts, suggesting that wildfires account for a greater mortality and economic burden.
 
+```{python}
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+file_path = 'postfire.csv' 
+df = pd.read_csv(file_path)
+
+# wildfire dataset
+file_path = 'postfire.csv'  
+df = pd.read_csv(file_path)
+
+# need to clean "*"
+df.columns = df.columns.str.strip().str.replace(r'\* ', '', regex=True)
+
+# aggregate by county
+wildfire_counts = df['County'].value_counts().reset_index()  # Get case counts
+wildfire_counts.columns = ['County', 'Cases']
+
+# we want to use shapefile to visualize the data in map
+shapefile_path = 'CA_Counties.shp' 
+california_map = gpd.read_file(shapefile_path)
+california_map['County'] = california_map['NAME']
+
+merged_map = california_map.merge(wildfire_counts, on='County', how='left')
+
+fig, ax = plt.subplots(1, 1, figsize=(20, 15))
+merged_map.boundary.plot(ax=ax, linewidth=0.8, color='black') 
+merged_map.plot(
+    column='Cases',
+    cmap='Reds',  # Use a darker colormap for severity
+    legend=True,
+    legend_kwds={
+        'label': "Number of Wildfire Cases by County",
+        'orientation': "vertical"
+    },
+    ax=ax,
+    missing_kwds={
+        "color": "lightgrey",
+        "label": "No data"
+    }
+)
+
+for idx, row in merged_map.iterrows():
+    if pd.notna(row['Cases']) and row['Cases'] > 5:  # Only label counties with more than 5 cases
+        plt.annotate(
+            text=f"{row['County']}\n{int(row['Cases'])} cases",
+            xy=(row.geometry.centroid.x, row.geometry.centroid.y),
+            horizontalalignment='center',
+            fontsize=6,  # Reduced font size
+            color='black',
+            weight='bold'
+        )
+
+# Title and annotations
+ax.set_title('Wildfire Cases in California by County', fontsize=22)  # Enlarged title
+ax.axis('off')
+
+plt.annotate("Counties without data shown in grey", xy=(0.1, 0.02), xycoords='figure fraction', fontsize=12)
+
+plt.show()
+
+output_list = []
+
+for idx, row in merged_map.iterrows():
+    if pd.notna(row['Cases']):
+        output_list.append(f"{row['County']}: {int(row['Cases'])} cases")
+    else:
+        output_list.append(f"{row['County']}: No data")
+
+for item in output_list:
+    print(item)
 
 ```
