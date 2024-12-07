@@ -1,0 +1,261 @@
+---
+title: "California's Wildfire Impact on Community Economics"
+author: "Team50: Yuki Yan (section4, YukiYan233), Tianhao Zhang (section4, 0628jayson)"
+date: today
+format: 
+  pdf
+execute:
+    echo: false   # Hide code in the output
+    warning: false  # Hide warnings
+    message: false  # Hide messages
+---
+1. Introduction
+Background: Overview of California’s wildfire challenges and their health and economic repercussions.
+Problem Statement: The intersection of wildfire policies and their economic impacts on property damage, insurance costs, and recovery expenses.
+Objectives:
+Quantify wildfire impacts on community economics.
+Evaluate the effectiveness of wildfire-related policies using reproducible coding methodologies.
+
+
+2. Literature Review 
+# Wildfire Trends
+Review of increasing frequency and severity of wildfires in California. This first graph shows the incidence of the wildfires by country with a heat map. It is the first step in the process
+```{python}
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+file_path = 'postfire.csv' 
+df = pd.read_csv(file_path)
+
+# wildfire dataset
+file_path = 'postfire.csv'  
+df = pd.read_csv(file_path)
+
+# need to clean "*"
+df.columns = df.columns.str.strip().str.replace(r'\* ', '', regex=True)
+
+# aggregate by county
+wildfire_counts = df['County'].value_counts().reset_index()  # Get case counts
+wildfire_counts.columns = ['County', 'Cases']
+
+# we want to use shapefile to visualize the data in map
+shapefile_path = 'CA_Counties.shp' 
+california_map = gpd.read_file(shapefile_path)
+california_map['County'] = california_map['NAME']
+
+merged_map = california_map.merge(wildfire_counts, on='County', how='left')
+
+# Adjusted figure size
+fig, ax = plt.subplots(1, 1, figsize=(4, 3))  # Smaller size (10x8 inches)
+
+merged_map.boundary.plot(ax=ax, linewidth=0.8, color='black') 
+merged_map.plot(
+    column='Cases',
+    cmap='Reds',  # Use a darker colormap for severity
+    legend=True,
+    legend_kwds={
+        'label': "Number of Wildfire Cases by County",
+        'orientation': "vertical"
+    },
+    ax=ax,
+    missing_kwds={
+        "color": "lightgrey",
+        "label": "No data"
+    }
+)
+
+
+
+# Title and annotations
+ax.set_title('Wildfire Cases in California by County', fontsize=22)  # Enlarged title
+ax.axis('off')
+
+plt.annotate("Counties without data shown in grey", xy=(0.1, 0.02), xycoords='figure fraction', fontsize=6)
+
+plt.show()
+
+output_list = []
+
+for idx, row in merged_map.iterrows():
+    if pd.notna(row['Cases']):
+        output_list.append(f"{row['County']}: {int(row['Cases'])} cases")
+    else:
+        output_list.append(f"{row['County']}: No data")
+
+##for item in output_list:
+   ## print(item)
+
+```
+
+## Medi-Cal Enrollment by Region
+Here, we have Medi-Cal enrollment by region. It is expected that areas with larger population will have larger enrollment rates.
+# Load datasets
+```{python}
+path1 = 'care_enrollment.csv'
+path2 = 'enrollment_data.csv'
+
+managed_care = pd.read_csv(path1)
+enrollment = pd.read_csv(path2)
+
+# Convert 'Enrollment Month' in managed_care to datetime
+managed_care['Enrollment Month'] = pd.to_datetime(managed_care['Enrollment Month'])
+
+# Convert 'Count of Enrollees' to numeric (remove commas and handle as numeric)
+managed_care['Count of Enrollees'] = pd.to_numeric(
+    managed_care['Count of Enrollees'].str.replace(',', ''), errors='coerce'
+)
+
+# Convert 'Eligibility Date' in enrollment to datetime
+enrollment['Eligibility Date'] = pd.to_datetime(enrollment['Eligibility Date'])
+
+# Replace 'NULL' with 0 in '# Enrolled' and convert to numeric
+enrollment['# Enrolled'] = pd.to_numeric(enrollment['# Enrolled'].fillna(0))
+
+# Group and sum enrollment counts by month
+enrollment_trends_managed = managed_care.groupby(managed_care['Enrollment Month'].dt.to_period('M'))['Count of Enrollees'].sum()
+enrollment_trends_general = enrollment.groupby(enrollment['Eligibility Date'].dt.to_period('M'))['# Enrolled'].sum()
+enrollment_trends_managed.to_csv('enrollment_trends_managed.csv')
+
+# Convert period indices to datetime for plotting
+enrollment_trends_managed.index = enrollment_trends_managed.index.to_timestamp()
+enrollment_trends_general.index = enrollment_trends_general.index.to_timestamp()
+# Plot the data with adjusted line width
+plt.figure(figsize=(4, 4))
+plt.plot(enrollment_trends_managed.index, enrollment_trends_managed.values, 
+         label='Managed Care Enrollees', marker='o', linewidth=1)  # Set line width here
+plt.plot(enrollment_trends_general.index, enrollment_trends_general.values, 
+         label='General Enrollees', marker='x', linewidth=1)  # Set line width here
+
+# Title and labels with smaller font sizes
+plt.title('Medi-Cal Enrollment Trends Over Time', fontsize=10)  # Smaller title font
+plt.xlabel('Date', fontsize=8)  # Smaller x-axis label font
+plt.ylabel('Total Enrollees', fontsize=8)  # Smaller y-axis label font
+
+# Set x-axis tick label font size
+plt.xticks(fontsize=6)  # Adjust this value to make the x-axis labels smaller
+
+# Legend with smaller font size
+plt.legend(fontsize=8)
+
+plt.grid(True)
+plt.show()
+
+```
+
+## Economic Impact Map
+Now, we see a heat map based on economic impact
+```{python}
+
+import pandas as pd
+
+# Reload the new postfire file to analyze its structure
+file_path_new = 'postfire.csv'
+data = pd.read_csv(file_path_new)
+
+# filter column Hazard Type with value 'Fire'
+data = data[data['Hazard Type'] == 'Fire']
+
+
+# Clean and preprocess the dataset for plotting
+# Focusing on relevant columns: fire size (if available), economic impact, and geographic information
+
+# Rename columns for easier access
+data.rename(columns={
+    '* Damage': 'Damage',
+    '* CAL FIRE Unit': 'FireUnit',
+    'Assessed Improved Value (parcel)': 'EconomicImpact',
+    'Latitude': 'Lat',
+    'Longitude': 'Lon',
+    'State': 'State',
+    'County': 'County'
+}, inplace=True)
+
+# Drop rows with missing essential data
+cleaned_data = data
+
+# Check for fire size (if not available, proceed without)
+if 'FireUnit' in cleaned_data.columns:
+    fire_size_available = True
+else:
+    fire_size_available = False
+
+# Summary statistics of key columns
+summary_stats = cleaned_data[['EconomicImpact', 'Lat', 'Lon']].describe()
+
+# Display the summary of key statistics
+#summary_stats
+
+# Data Clearning
+geo_data = cleaned_data.groupby('County', as_index=False).agg({
+    'EconomicImpact': 'sum',
+    'Lat': 'mean',
+    'Lon': 'mean'
+
+})
+
+#Plot
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Download
+usa_counties = gpd.read_file("https://www2.census.gov/geo/tiger/GENZ2018/shp/cb_2018_us_county_20m.zip")
+
+# filter 
+california_map = usa_counties[usa_counties['STATEFP'] == '06']  # STATEFP 为加州的代码
+
+# map
+##fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+##california_map.boundary.plot(ax=ax, linewidth=1)
+##plt.title("California County Map")
+##plt.show()
+geo_data['County'] = geo_data['County'].str.lower()
+california_map['NAME'] = california_map['NAME'].str.lower()
+
+map_data = california_map.merge(geo_data, left_on='NAME', right_on='County', how='left')
+
+# Adjusted figure size
+fig, ax = plt.subplots(1, 1, figsize=(6, 6))  # Smaller size (8x8 inches)
+
+california_map.boundary.plot(ax=ax, linewidth=1)
+map_data.plot(column='EconomicImpact', ax=ax, legend=True,
+              legend_kwds={'label': "Total Economic Impact (USD)"},
+              cmap='OrRd', vmin=0, vmax=2e9)
+plt.title('Economic Impact Across California Counties')
+plt.show()
+
+
+```
+
+Introduction
+California's susceptibility to wildfires has significant health and economic repercussions. With the ongoing climate crisis, these events are becoming more frequent and severe, emphasizing the need for effective policies to mitigate their impact. This study evaluates the effectiveness of Medi-Cal, California's public health insurance program, in responding to these challenges, particularly through its expansions during wildfire emergencies. This rise in wildfire incidents correlates with deteriorating air quality and increased health issues across the state, particularly respiratory diseases from heightened PM2.5 levels. Our analysis aims to understand the role of Medi-Cal in buffering these health risks during wildfire episodes.
+
+Key findings
+
+Impact of Wildfires on Air Quality and Health:
+Graphical analysis reveals that PM2.5 concentrations peak during wildfire seasons, with severe years like 2018 and 2020 marking significant increases.
+Respiratory disease prevalence correlates with these spikes, underscoring the health impacts of poor air quality.
+Healthcare Response and Insurance Enrollment:
+Medi-Cal enrollment trends, notably increasing post-2018 and during the 2020 COVID-19 pandemic, suggest that public health emergencies, compounded by wildfires, drive up the demand for healthcare.
+The analysis of enrollment by region and type indicates that areas most affected by wildfires see a substantial uptick in Medi-Cal sign-ups, affirming the program’s role in enhancing healthcare access during crises.
+Economic and Mortality Impacts:
+Wildfire-related mortality and its economic implications, assessed using the EPA's Value of a Statistical Life model, indicate a significant burden, with losses amounting to hundreds of billions of dollars due to health-related impacts.
+The decline in mortality rates following Medi-Cal enhancements post-2020 highlights the policy’s effectiveness in safeguarding public health against wildfire-induced risks.
+
+Health Financial Burden Based on Mortality Rate Calculation
+
+The economic valuation is calculated using the formula mortality burden times EPA's Value of a Statistical Life (VSL), adjusted to $8.7 million in 2015 dollars. The VSL is adjusted for inflation and income growth up to 2015 using publicly available data. Here, we applied a  3% discount rate to the sum of estimated values over the 11-year period to calculate the net present value (NPV). This discounting reflects the time value of money, making future benefits worth less today.
+
+The graph shows a significant upward trend in the financial burden from 2010 to 2022, peaking in recent years. This increase likely correlates with both a rise in wildfire frequency and severity, as well as improvements in how we value statistical lives over time.
+
+Economic Impact Map
+In this Economic Impact Map,  we use the column Assessed Improved Value (AIV) to see the impact.  AIV is assigned by a county assessor to improved structures on a parcel. In high-risk wildfire areas, the AIV could be indicative of higher property values and consequently higher potential economic losses from wildfires. By comparing the trends in health financial burdens from the mortality rates with the AIV across counties, we know that areas with higher property values indeed face higher financial impacts from wildfires. This could be due to higher property damages or greater costs associated with health impacts in these areas.
+
+The alignment of data showing increased mortality-related financial burdens and high AIV in certain counties supports targeted policy interventions. Policies could be designed to enhance fire prevention measures, improve healthcare accessibility during wildfires, and offer financial aids to mitigate losses in high-value areas.
+
+
+Limitations
+Our study acknowledges potential biases due to overlapping crises, such as the COVID-19 pandemic, which might skew data interpretations related to healthcare needs and enrollments in 2020.
+Conclusion
+As wildfires continue to pose a significant threat to public health and economic stability in California, the Medi-Cal program's role becomes increasingly vital. Our findings advocate for the expansion of health insurance coverage as a critical component of the state’s disaster response strategy, enhancing community resilience and reducing the adverse impacts of wildfires on vulnerable populations.
