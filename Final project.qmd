@@ -274,7 +274,7 @@ plt.show()
 
 ```
 
-#2022
+# 2022
 ```{python}
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -701,8 +701,8 @@ map_data.plot(column='EconomicImpact', ax=ax, legend=True,
 plt.title('Economic Impact Across California Counties')
 plt.show()
 ```
-# Wildfire Incidence Map. By comparing the results. We know that the high-risk area has the most economic value accessed. Showing that more fire incidence shows more economic value they can have (like health value, property damage reconstruction). These findings extend evidence on climate-related health impacts, suggesting that wildfires account for a greater mortality and economic burden.
 
+# Wildfire Incidence Map. By comparing the results. We know that the high-risk area has the most economic value accessed. Showing that more fire incidence shows more economic value they can have (like health value, property damage reconstruction). These findings extend evidence on climate-related health impacts, suggesting that wildfires account for a greater mortality and economic burden.
 ```{python}
 import pandas as pd
 import geopandas as gpd
