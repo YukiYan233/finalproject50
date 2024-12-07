@@ -138,6 +138,40 @@ plt.show()
 Health Impacts: PM2.5 and Medi-Cal enrollment 
 # In California, the traditional wildfire season has lengthened, causing peak impacts to occur in earlier months (April-July). California’s recent wildfire seasons have caused extensive environmental, health, and economic damages within and outside of the state. 
 
+# 2020 Most Polluted Areas by Average PM2.5
+```{python}
+data = pd.read_csv('airquality.csv')
+data['Date'] = pd.to_datetime(data['Date'])
+
+columns_to_keep = [
+    "Date",
+    "Daily Mean PM2.5 Concentration",
+    "Site Name",
+    "CBSA_NAME",
+    "STATE",
+    "COUNTY"
+]
+data = data[columns_to_keep]
+
+data.rename(columns={"Daily Mean PM2.5 Concentration": "PM2.5"}, inplace=True)
+
+# 1. Find the most polluted areas by average PM2.5
+most_polluted_areas = (
+    data.groupby("CBSA_NAME")["PM2.5"]
+    .mean()
+    .sort_values(ascending=False)
+    .reset_index()
+)
+
+plt.figure(figsize=(12, 6))
+sns.barplot(data=most_polluted_areas, x="PM2.5", y="CBSA_NAME", palette="Reds_r")
+plt.title("Most Polluted Areas by Average PM2.5 (2020)")
+plt.xlabel("Average PM2.5 Concentration (µg/m³)")
+plt.ylabel("CBSA Name")
+plt.tight_layout()
+plt.show()
+```
+
 ```{python}
 # Line Graph of Fire Occurrences by Month
 plt.figure(figsize=(14, 8))
@@ -169,7 +203,11 @@ data_2019 = data_2019[columns_to_keep]
 data_2019['Month'] = data_2019['Date Time'].dt.month
 
 monthly_pm25_2019 = data_2019.groupby('Month')['Value'].mean().reset_index()
+monthly_pm25_2019.to_csv('monthly_pm25_2019.csv', index=False)
 
+# select month from April to October
+monthly_pm25_2019 = monthly_pm25_2019[(monthly_pm25_2019['Month'] >= 4) & (monthly_pm25_2019['Month'] <= 9)]
+annual_1=monthly_pm25_2019['Value'].sum()
 plt.figure(figsize=(10, 6))
 sns.lineplot(data=monthly_pm25_2019, x="Month", y="Value", marker="o")
 plt.title("Monthly Average PM2.5 Trend (2019)")
@@ -181,52 +219,20 @@ plt.xticks(range(1, 13), [
 plt.grid()
 plt.tight_layout()
 plt.show()
-
 ```
+
 
 # 2020
 ```{python}
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-data = pd.read_csv('airquality.csv')
-data['Date'] = pd.to_datetime(data['Date'])
-
-columns_to_keep = [
-    "Date",
-    "Daily Mean PM2.5 Concentration",
-    "Site Name",
-    "CBSA_NAME",
-    "STATE",
-    "COUNTY"
-]
-data = data[columns_to_keep]
-
-data.rename(columns={"Daily Mean PM2.5 Concentration": "PM2.5"}, inplace=True)
-
-# 1. Find the most polluted areas by average PM2.5
-most_polluted_areas = (
-    data.groupby("CBSA_NAME")["PM2.5"]
-    .mean()
-    .sort_values(ascending=False)
-    .reset_index()
-)
-
-plt.figure(figsize=(12, 6))
-sns.barplot(data=most_polluted_areas, x="PM2.5", y="CBSA_NAME", palette="Reds_r")
-plt.title("Most Polluted Areas by Average PM2.5 (2020)")
-plt.xlabel("Average PM2.5 Concentration (µg/m³)")
-plt.ylabel("CBSA Name")
-plt.tight_layout()
-plt.show()
-
 # the worst air quality month
 data['Month'] = data['Date'].dt.month
-monthly_pm25 = data.groupby('Month')['PM2.5'].mean().reset_index()
+monthly_pm25_2020 = data.groupby('Month')['PM2.5'].mean().reset_index()
+monthly_pm25_2020.to_csv('monthly_pm25_2020.csv', index=False)
 
+monthly_pm25_2020 = monthly_pm25_2020[(monthly_pm25_2020['Month'] >= 4) & (monthly_pm25_2020['Month'] <= 9)]
+annual_2=monthly_pm25_2020['PM2.5'].sum()
 plt.figure(figsize=(10, 6))
-sns.lineplot(data=monthly_pm25, x="Month", y="PM2.5", marker="o")
+sns.lineplot(data=monthly_pm25_2020, x="Month", y="PM2.5", marker="o")
 plt.title("Average PM2.5 by Month (2020)")
 plt.xlabel("Month")
 plt.ylabel("Average PM2.5 Concentration (µg/m³)")
@@ -236,17 +242,12 @@ plt.xticks(range(1, 13), [
 plt.grid()
 plt.tight_layout()
 plt.show()
-
 data.to_csv('processed_air_quality_data.csv', index=False)
 
 ```
 
 # 2021
 ```{python}
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 data_2021 = pd.read_csv('Hourly-Records-2021-01-01-to-2021-12-31.csv')
 
 print(data_2021.head())
@@ -259,7 +260,10 @@ data_2021 = data_2021[columns_to_keep]
 data_2021['Month'] = data_2021['MeasurementStartTime'].dt.month
 
 monthly_pm25_2021 = data_2021.groupby('Month')['MeasuredValue'].mean().reset_index()
+monthly_pm25_2021.to_csv('monthly_pm25_2021.csv', index=False)
 
+monthly_pm25_2021 = monthly_pm25_2021[(monthly_pm25_2021['Month'] >= 4) & (monthly_pm25_2021['Month'] <= 9)]
+annual_3=monthly_pm25_2021['MeasuredValue'].sum()
 plt.figure(figsize=(10, 6))
 sns.lineplot(data=monthly_pm25_2021, x="Month", y="MeasuredValue", marker="o")
 plt.title("Monthly Average PM2.5 Trend (2021)")
@@ -276,10 +280,6 @@ plt.show()
 
 # 2022
 ```{python}
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 data_2022 = pd.read_csv('Hourly-Records-2022-01-01-to-2022-12-31.csv')
 
 print(data_2022.head())
@@ -292,7 +292,16 @@ data_2022 = data_2022[columns_to_keep]
 data_2022['Month'] = data_2022['MeasurementStartTime'].dt.month
 
 monthly_pm25_2022 = data_2022.groupby('Month')['MeasuredValue'].mean().reset_index()
+monthly_pm25_2022.to_csv('monthly_pm25_2022.csv', index=False)
 
+# only select month from March to September
+monthly_pm25_2022 = monthly_pm25_2022[(monthly_pm25_2022['Month'] >= 4) & (monthly_pm25_2022['Month'] <= 9)]
+annual_4=monthly_pm25_2022['MeasuredValue'].sum()
+# create a dataframe
+data = {
+        'Annual PM2.5': [annual_1, annual_2, annual_3, annual_4]}
+df = pd.DataFrame(data)
+df.to_csv('annual_pm25.csv', index=False)
 plt.figure(figsize=(10, 6))
 sns.lineplot(data=monthly_pm25_2022, x="Month", y="MeasuredValue", marker="o")
 plt.title("Monthly Average PM2.5 Trend (2022)")
@@ -704,16 +713,13 @@ plt.show()
 
 # Wildfire Incidence Map. By comparing the results. We know that the high-risk area has the most economic value accessed. Showing that more fire incidence shows more economic value they can have (like health value, property damage reconstruction). These findings extend evidence on climate-related health impacts, suggesting that wildfires account for a greater mortality and economic burden.
 ```{python}
+# wildfire dataset
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 file_path = 'postfire.csv' 
-df = pd.read_csv(file_path)
-
-# wildfire dataset
-file_path = 'postfire.csv'  
 df = pd.read_csv(file_path)
 
 # need to clean "*"
@@ -765,16 +771,4 @@ ax.axis('off')
 plt.annotate("Counties without data shown in grey", xy=(0.1, 0.02), xycoords='figure fraction', fontsize=12)
 
 plt.show()
-
-output_list = []
-
-for idx, row in merged_map.iterrows():
-    if pd.notna(row['Cases']):
-        output_list.append(f"{row['County']}: {int(row['Cases'])} cases")
-    else:
-        output_list.append(f"{row['County']}: No data")
-
-for item in output_list:
-    print(item)
-
 ```
